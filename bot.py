@@ -1,33 +1,36 @@
-import tweepy
+import os
 import requests
+from dotenv import load_dotenv
 
-# Twitter API credentials
-API_KEY = "your_twitter_api_key"
-API_SECRET = "your_twitter_api_secret"
-ACCESS_TOKEN = "your_twitter_access_token"
-ACCESS_SECRET = "your_twitter_access_secret"
+# Load environment variables from the .env file
+load_dotenv()
 
-# Authenticate to Twitter
-auth = tweepy.OAuthHandler(API_KEY, API_SECRET)
-auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
-api = tweepy.API(auth)
+# Fetch the NewsAPI key from the environment variables
+newsapi_key = os.getenv("NEWSAPI_KEY")
 
-# NewsAPI credentials
-NEWS_API_KEY = "your_newsapi_key"
-url = f"https://newsapi.org/v2/everything?q=crypto&domains=coindesk.com&apiKey={NEWS_API_KEY}"
+# Define the endpoint for the NewsAPI
+url = 'https://newsapi.org/v2/everything'
 
-# Fetch the news from CoinDesk
-response = requests.get(url).json()
+# Define query parameters for fetching crypto-related news
+params = {
+    'q': 'cryptocurrency OR bitcoin OR ethereum',  # Keywords to search for
+    'pageSize': 5,  # Number of results per request
+    'apiKey': newsapi_key  # Your NewsAPI key
+}
 
-# Get the latest 1 news article and format it for Twitter
-article = response["articles"][0]
-title = article["title"]
-link = article["url"]
+# Make the API request
+response = requests.get(url, params=params)
 
-# Prepare the tweet
-tweet = f"🚨 {title}\n🔗 {link} #Bitcoin #Crypto #CoinDesk"
-
-# Post the tweet
-api.update_status(tweet)
-
-print("Tweet posted successfully!")
+# Check if the request was successful
+if response.status_code == 200:
+    news_data = response.json()
+    articles = news_data['articles']
+    
+    # Print the titles of the articles
+    for article in articles:
+        print(article['title'])
+        print(article['description'])
+        print(f"Read more: {article['url']}")
+        print("------")
+else:
+    print("Failed to retrieve news")
